@@ -15,7 +15,7 @@ print(f"Tensorflow={tf.version.VERSION}")
 
 WEIGH_MODEL = 'best_model'
 COW_DETECTION_THRESH = 0.10
-MODELS_PATH = "C:/Users/XYZ/PycharmProjects/pythonProject/models"
+MODELS_PATH = "C:/Users/derek/Documents/GitHub/models"
 XPAD = 10
 YPAD = 20
 

@@ -79,6 +79,7 @@ try:
 
             st.write('')
             st.write("Wasn't quite what you were expecting?")
+            st.write("The system is still in early development, but you can help make it better!")
             st.write("Allow us to use your image to improve the algorithm!")
             IMPROVE = st.checkbox('I agree to let you use my images')
 
