@@ -4,10 +4,13 @@ import numpy as np
 from VisuWeigh import predict, save
 from datetime import datetime as dt
 import logging
+import os
 
 sweight = 0
 count = 0
 IMPROVE = False
+basePath = 'VisuWeigh'
+client_data_path = 'client_data'
 
 st.set_page_config(page_title='Visual Weighing Tool', page_icon='icon.png')
 
@@ -71,7 +74,7 @@ try:
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 st.image(image, caption=f'Weight of cows in image: {[int(w) for w in weight]}')
 
-            with open('pcount', 'r+') as f:
+            with open(os.path.join(basePath,'pcount'), 'r+') as f:
                 count = int(f.read())
                 count = 1 + count
                 f.seek(0)
@@ -94,7 +97,7 @@ try:
                             if a_weight > 0 and a_weight != sweight:
                                 sweight = a_weight
                                 print(f'Count: {count}, Weight: {a_weight}')
-                                save(image, count, a_weight, p_weight)
+                                save(image, client_data_path, count, a_weight, p_weight)
 
                     st.form_submit_button()
 

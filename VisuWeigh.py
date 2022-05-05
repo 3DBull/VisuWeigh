@@ -15,7 +15,7 @@ print(f"Tensorflow={tf.version.VERSION}")
 
 WEIGH_MODEL = 'best_model'
 COW_DETECTION_THRESH = 0.10
-MODELS_PATH = "C:/Users/derek/Documents/GitHub/models"
+MODELS_PATH = "models"
 XPAD = 10
 YPAD = 20
 
@@ -98,10 +98,10 @@ def drawboxes(img, pred, weight):
 
     return img
 
-def save(image, count, weight, p_weight):
+def save(image, save_dir, count, weight, p_weight):
     print('Saving...')
-    cv2.imwrite(f'client_data/img/img_{count}.png', image)
-    with open(f'../client_data/client_data.json', 'r+') as f:
+    cv2.imwrite(os.path.join(save_dir, 'img', f'img_{count}.png'), image)
+    with open(os.path.join(save_dir, 'client_data.json'), 'r+') as f:
         data = json.load(f)
         data.append({'img_id': count, 'weight': weight, 'predicted': str(p_weight)})
         jasonf = json.dumps(data)
