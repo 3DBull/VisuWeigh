@@ -8,6 +8,7 @@ from PIL import Image
 from data_processing.yolo import Predictor
 from cv2 import cv2
 import json
+from datetime import datetime as dt
 
 tf.config.run_functions_eagerly(True)
 tf.data.experimental.enable_debug_mode()
@@ -15,7 +16,7 @@ print(f"Tensorflow={tf.version.VERSION}")
 
 WEIGH_MODEL = 'best_model'
 COW_DETECTION_THRESH = 0.10
-MODELS_PATH = "models"
+MODELS_PATH = "../models"
 XPAD = 10
 YPAD = 20
 
@@ -100,10 +101,10 @@ def drawboxes(img, pred, weight):
 
 def save(image, save_dir, count, weight, p_weight):
     print('Saving...')
-    cv2.imwrite(os.path.join(save_dir, 'img', f'img_{count}.png'), image)
+    cv2.imwrite(os.path.join(save_dir, 'img', f'im_{count}.png'), image)
     with open(os.path.join(save_dir, 'client_data.json'), 'r+') as f:
         data = json.load(f)
-        data.append({'img_id': count, 'weight': weight, 'predicted': str(p_weight)})
+        data.append({'time': dt.now().strftime('%Y-%m-%d-%H:%M:%S.%f'), 'impath': os.path.join(f'im_{count}.png'), 'weight': weight, 'predicted': str(p_weight)})
         jasonf = json.dumps(data)
         f.seek(0)
         f.write(jasonf)
