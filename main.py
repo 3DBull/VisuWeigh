@@ -37,7 +37,14 @@ st.title('Hi There!')
 st.write("You've found it! This is the place to try out the revolutionary cattle weighing app!")
 st.write("Just select an image to upload or take a picture with your camera, and we'll handle the rest of the heavy lifting! It's that Easy!")
 st.write('')
-#st.write("Don't have a cow around to try it on? Try one of ours!")
+st.write("Don't have a cow around to try it on? Try one of ours from the sidebar!")
+
+with st.sidebar:
+    st.write('Choose "Upload Images" and then drag and drop on of these images')
+    paths = os.listdir('test_images')
+    for path in np.random.choice(paths, 5):
+        im = cv2.cvtColor(cv2.imread(os.path.join('test_images', path)), cv2.COLOR_BGR2RGB)
+        st.image(im)
 
 selection = st.selectbox('Select Input:', ['Camera', 'Upload Images'], index=0)
 
@@ -52,11 +59,6 @@ try:
 
     elif selection == 'Upload Images':
         img_file_buffer = st.file_uploader('Select images for uploading', type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
-
-
-    #with st.sidebar:
-    #    st.write('Choose "Upload Images" and then drag and drop on of these images')
-    #    st.image(image_base64)
 
     if img_file_buffer is not None and img_file_buffer != []:
         # Read images from file buffer
