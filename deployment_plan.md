@@ -16,17 +16,17 @@ The deployment of the VisuWeigh cattle weight estimation model will be performed
 	The basic interface includes two methods of weighing a cow from an image. The user can eaither upload an image or take an image from a camera. 
 	If there is a cow detected, the image will be passed to the CNN. JPEG, JPG, and PNG files are accepted. The interface will show bounding boxes and 	predicted weights for all cows in the image. 
 
-	The code needs to handle cases for:
+	The code needs to handle cases for:</br>
 		1. No cows in view</br>
-		2. Corrupted image
-		3. Multiple images uploaded
-		4. Multiple cows in multiple images
+		2. Corrupted image</br>
+		3. Multiple images uploaded</br>
+		4. Multiple cows in multiple images</br>
 
 - [ ] Add data set viewing/browsing to the UI
 	
-	An evaluation data set will be available on the web app for the users to observe and interact with. The data can be used for users to try the weight 	prediction functionality. 
-		1. Display data statistics
-		2. Display model performance for evaluation
+	An evaluation data set will be available on the web app for the users to observe and interact with. The data can be used for users to try the weight 	prediction functionality. </br>
+		1. Display data statistics</br>
+		2. Display model performance for evaluation</br>
 
 - [ ] Add feedback functionality
 
@@ -34,11 +34,11 @@ The deployment of the VisuWeigh cattle weight estimation model will be performed
 
 - [ ] Test complete functionality
 
-	The code needs to handle cases for:
-		1. Fast input to data interaction (avoid hanging or laging)
-		2. No feedback
-		3. Partial Feedback
-		4. Invalid feedback
+	The code needs to handle cases for:</br>
+		1. Fast input to data interaction (avoid hanging or laging)</br>
+		2. No feedback</br>
+		3. Partial Feedback</br>
+		4. Invalid feedback</br>
 		
 - [ ] Deploy app on exposed webserver
  
