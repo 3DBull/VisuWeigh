@@ -17,7 +17,7 @@ The deployment of the VisuWeigh cattle weight estimation model will be performed
 	If there is a cow detected, the image will be passed to the CNN. JPEG, JPG, and PNG files are accepted. The interface will show bounding boxes and 	predicted weights for all cows in the image. 
 
 	The code needs to handle cases for:
-		1. No cows in view
+		1. No cows in view</br>
 		2. Corrupted image
 		3. Multiple images uploaded
 		4. Multiple cows in multiple images
