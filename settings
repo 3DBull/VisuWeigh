@@ -1,1 +1,0 @@
-streamlit run VisuWeigh\main.py --server.port=443 --browser.gatherUsageStats=false --ui.hideTopBar=true --server.runOnSave=true --server.sslCertFile=C:\Certbot\live\visuway.tech\fullchain.pem --server.sslKeyFile=C:\Certbot\live\visuway.tech\privkey.pem --server.forceSSL=true --client.showErrorDetails=false
