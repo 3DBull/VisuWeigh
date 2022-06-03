@@ -9,14 +9,20 @@ Project to develop a data pipeline and machine learning models to estimate cattl
 ## Methods
  The key to a good prediction CNN is good data. The focus of this project is to retrieve and clean large amounts of data in an automated fashon to train a CNN on predicting cattle weight. 
 
+## System Architecture
+ The VisuWeigh system is designed to handle data, models, and evaluations automatically. For more information, read the [System Architecture documentation.](https://docs.google.com/document/d/14799TjMcJJRNSxj-kKX8yT1cAhYeMiHgLOpRlD7d3nM/edit?usp=sharing) 
+
 ## To Do:
 - [x] Create Raw Collection Pipline 
 - [x] Create Data Cleaning Pipline
 - [x] Train on CNN Model
 - [x] Compare Transformer and CNN Models
-- [ ] Scale up Data
+- [x] Scale up Data with Automated Collection
+- [x] Build Server API
+- [x] Build Server GUI
 - [ ] Automate Cleaning and Training
-- [ ] Sumbit Paper to AI Conference
+- [ ] Automate Evaluation
+
 
 ## Instructions
 Files are under construction... 
@@ -24,6 +30,7 @@ Debuggig may be necissary. Run at your own risk.
 
 
 ## Models in Action
+![pdf] (https://drive.google.com/open?id=1oU7_ls9v-QRjiqVqDR_KMKvcpPorGvRY)
 ![image](https://user-images.githubusercontent.com/28244647/156103607-91e49917-0ef2-49a9-a644-7e792b2a2cdb.png)
 
 These models vary in performance with each image. Overall the Xception model achieves the highest performance on new data. On the first image where the image is distorted, none of the models perform well. This is a good sign that the models are fitting the data in the expected manner. 
