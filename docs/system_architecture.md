@@ -33,7 +33,7 @@ Various filters and algorithms are applied for the ETL(extract-transform-load) p
 The data cleaning process is executed on a fixed weekly schedule. 
 
 ### Input
-The ETL task collects all the raw data files found in the database folder. [See Database Structure](#dbstruct) 
+The ETL task collects all the raw data files found in the database folder. [See Database Structure](#database-structure ) 
 
 ### Output
 The output is a single json file with the cleaned database stored in it. The json data includes the columns: [timestamp, weight, auction, path] The file is stored in the training folder along with the cropped images prepared for the training network. 
@@ -95,7 +95,7 @@ The server uses the model that is stored in the `models/serve` directory.
 The server provides an interface for users to measure the weight of cows from an uploaded image.
 Check out the web app at [VisuWay.tech/weigh/](https://VisuWay.tech/weigh/)
 
-## Database Structure <dbstruct name="dbstruct"/>
+## Database Structure 
 
 A file system architecture was chosen for the database to keep the data broadly accessible for any method of extraction. 
 
@@ -138,6 +138,9 @@ The following outline shows the database structure for the entire database:
                    ...
                serv/
                    {model_name}_{epoch}_{val_loss} #keras model
+               archive/
+                   {model_name}_{epoch}_{val_loss} #keras model
+                   ...
 
                training_logs/
                    {model_name}_{parameter_name}_{date}/
