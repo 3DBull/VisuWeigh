@@ -149,5 +149,23 @@ The following outline shows the database structure for the entire database:
                        parameters.json
                    ...
 
+---
 
+# Development 
+After prototyping individual tasks, the development of the system will be built in two stages. 
 
+### Stage 1: Manual Deployment
+**Description:** Build each task with outputs and inputs to and from the database. Deployment of stage 1 will be manual with interactive debugging. 
+
+**Development Time:** 50 hours
+
+**Computation Time:** 12 Hours/Model
+
+### Stage 2: Automation and Monitoring
+Integrate airflow as the task scheduler and monitor. Automate processes from collection to the server. 
+
+**Description:** Build each task with outputs and inputs to and from the database. Deployment of stage 1 will be manual with interactive debugging. 
+
+**Development Time:** 35 hours
+
+**Computation Time:** 12 Hours/Model
