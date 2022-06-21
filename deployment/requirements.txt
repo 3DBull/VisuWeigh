@@ -1,0 +1,10 @@
+ipython==8.2.0
+matplotlib==3.5.1
+numpy==1.22.1
+opencv-python==4.5.4.58
+pandas==1.2.4
+Pillow==9.1.0
+streamlit==1.10.0
+tensorflow==2.7.0
+tqdm==4.64.0
+seaborn==0.11.2

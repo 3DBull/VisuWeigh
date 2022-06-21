@@ -39,16 +39,16 @@ The ETL task collects all the raw data files found in the database folder. [See 
 The output is a single json file with the cleaned database stored in it. The json data includes the columns: [timestamp, weight, auction, path] The file is stored in the training folder along with the cropped images prepared for the training network. 
 
 ## Machine Learning
-Models are experimented with and developed. Once a model is ready to be trained on the data it is placed in the `cattle_data/models/input/` folder. Any model that is placed in this folder will be included in the regular training and evaluation process. Models are trained when the amount of data in the training folder changes by a significant amount (5000 points) since the last training. 
+Models are experimented with and developed. Once a model is ready to be trained on the data it is placed in the `cattle_data/models/build/` folder. Any model that is placed in this folder will be included in the regular training and evaluation process. Models are trained when the amount of data in the training folder changes by a significant amount (5000 points) since the last training. 
 
 ### Input
 The input to the ML part of the system is the `inputs` folder in the database. Each model should be a `model_name.py` python file that returns a compiled keras model.
 
 ### Ouput
-The output from the ML process is a folder that contains all the trained models: `cattle_data/models/output/` in the database.
+The output from the ML process is a folder that contains all the trained models: `cattle_data/models/trained/` in the database.
 
 ## Evaluation
-Once training is completed, the evaluation process is initiated. Each model that exists in the `models/output/` folder will be evaluated using the following metrics. 
+Once training is completed, the evaluation process is initiated. Each model that exists in the `models/trained/` folder will be evaluated using the following metrics. 
 
 1. Mean absolute error as an error metric: 
 
@@ -65,7 +65,7 @@ If the best model from evaluation has a lower $MAE$ and a higher $MAA$, the mode
 to be used for deployment in the server. The previous serving model is moved into the `models/archive/` directory.
 
 ### Input 
-The input to the evaluation process are the trained models stored in the database at `cattle_data/models/output/`. 
+The input to the evaluation process are the trained models stored in the database at `cattle_data/models/trained/`. 
 
 ### Output
 The output from the evaluation process is a dataframe with the scema: 
@@ -130,10 +130,10 @@ The following outline shows the database structure for the entire database:
             
             
             models/
-               input/
+               build/
                    {model_name}.py
                    ...
-               output/
+               trained/
                    {model_name}_{epoch}_{val_loss} #keras model
                    ...
                serv/

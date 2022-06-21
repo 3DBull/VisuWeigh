@@ -1,0 +1,11 @@
+{
+  "Name": "VisuWeigh",
+  "Version": "1.0",
+  "Database": {
+    "root": "E:"
+  },
+  "Paths": {
+    "SERV_MODEL": "",
+    "__comment": "leave SERV_MODEL blank to use the default path in the database."
+  }
+}
