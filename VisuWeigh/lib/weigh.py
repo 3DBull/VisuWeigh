@@ -10,17 +10,13 @@ import logging
 import os
 import tensorflow as tf
 import numpy as np
-import sys
-sys.path.append('../scripts')
-LOGGER = logging.getLogger(__name__)
-from PIL import Image
-from lib.yolo import Predictor
+from VisuWeigh.lib.yolo import Predictor
 from cv2 import cv2
 import json
 from datetime import datetime as dt
-from lib import paths
+from VisuWeigh.lib import paths
 
-
+LOGGER = logging.getLogger(__name__)
 
 tf.config.run_functions_eagerly(True)
 tf.data.experimental.enable_debug_mode()
@@ -28,13 +24,13 @@ tf.data.experimental.enable_debug_mode()
 
 LOGGER.info(f"Tensorflow={tf.version.VERSION}")
 
+### FILE SETTINGS ###
 COW_DETECTION_THRESH = 0.10
 XPAD = 10
 YPAD = 20
-
-# Not implemented
-MULTIVIEW = False
+MULTIVIEW = False # Not implemented
 VERSION = 1.0
+####################
 
 predictor = Predictor(paths.YOLO, obj_thresh=COW_DETECTION_THRESH)
 weigh_model = tf.keras.models.load_model(paths.SERV_MODEL)
@@ -78,22 +74,17 @@ def preprocess(img, target_size=(224, 224)):
     global im_num
     # TODO # Add error handling for input
 
-    # img = tf.keras.preprocessing.image.load_img(img_path, target_size=None, color_mode='rgb')
-    # tf.image.pad_to_bounding_box(img, offset_height, offset_width, target_height, target_width)
     img = expand2square(img, 0)
     x = cv2.resize(img, target_size)
-    # img = tf.image.resize(img, size=target_size, preserve_aspect_ratio=True, antialias=False)
-
-    # x = tf.keras.preprocessing.image.img_to_array(img)
 
     im_num += 1
+
     # if predictor model has 3 color channels
     if weigh_model.input_shape[3] == 3:
         x = np.stack([x, x, x], axis=2)
 
-    # print(f'stacked shape: {x.shape}')
+    # LOGGER.debug(f'stacked shape: {x.shape}')
     # x = np.expand_dims(x, axis=0)
-    # print(x.shape)
     x = x / 255.
     return x
 
@@ -110,16 +101,33 @@ def drawboxes(img, pred, weight):
 
     return img
 
-def save(image, save_dir, count, weight, p_weight):
-    print('Saving...')
-    cv2.imwrite(os.path.join(save_dir, 'img', f'im_{count}.png'), image)
-    with open(os.path.join(save_dir, 'client_data.json'), 'r+') as f:
-        data = json.load(f)
-        data.append({'time': dt.now().strftime('%Y-%m-%d-%H:%M:%S.%f'), 'impath': os.path.join(f'im_{count}.png'), 'weight': weight, 'predicted': str(p_weight)})
-        jasonf = json.dumps(data)
-        f.seek(0)
-        f.write(jasonf)
-    return
+
+def init_client_dir(path):
+    if not os.path.exists(path):
+        LOGGER.warning(f'Could not find client data folder at {path}. Creating a new directory.')
+        os.mkdir(path)
+        os.mkdir(os.path.join(path, 'img'))
+        with open(os.path.join(path, 'pcount.txt'), 'w') as f:
+            f.write(0)
+        with open(os.path.join(path, 'client_data.json'), 'w') as f:
+            f.write('[]')
+
+
+def save_client_info(image, save_dir, count, weight, p_weight):
+    LOGGER.info('Saving client data ... ')
+    try:
+        cv2.imwrite(os.path.join(save_dir, 'img', f'im_{count}.png'), image)
+        with open(os.path.join(save_dir, 'client_data.json'), 'r+') as f:
+            data = json.load(f)
+            data.append({'time': dt.now().strftime('%Y-%m-%d-%H:%M:%S.%f'), 'impath': os.path.join(f'im_{count}.png'), 'weight': weight, 'predicted': str(p_weight)})
+            jasonf = json.dumps(data)
+            f.seek(0)
+            f.write(jasonf)
+    except cv2.error as er:
+        LOGGER.error(f'Could not save data. {er}')
+        return False
+    return True
+
 
 def predict(im_paths=[], images=[], url_path=None):
     global weigh_model, predictor
@@ -132,53 +140,56 @@ def predict(im_paths=[], images=[], url_path=None):
     # TODO add functionality for processing multiple images at a time
 
     # load the image from file (if necessary)
-    # TODO add error handling for input
     if len(images) == 0:
         if len(im_paths) > 0:
             images = [cv2.imread(im_path) for im_path in im_paths]
         else:
             raise ValueError('Provide an input to the predictor!')
+    try:
+        grays = [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) for img in images]
 
-    grays = [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) for img in images]
+        # predict the main bounding box from YOLO and preprocess image
+        '''
+        "prediction": 
+        [{"Label": "cow", "Prob": "0.7044643", "Box": {"x": [284, 103], "y": [340, 188]}}, 
+        {"Label": "cow", "Prob": "0.10411254", "Box": {"x": [360, 111], "y": [410, 184]}},]
+        '''
 
-    # predict the main bounding box and preprocess image
-    '''
-    "prediction": 
-    [{"Label": "cow", "Prob": "0.7044643", "Box": {"x": [284, 103], "y": [340, 188]}}, 
-    {"Label": "cow", "Prob": "0.10411254", "Box": {"x": [360, 111], "y": [410, 184]}},]
-    '''
-    predictions = [predictor.predict_cow_info(image=image) for image in images]
-    #cv2.imshow('image', gray)
-    #print(f'gray shape{gray.shape}')
+        predictions = [predictor.predict_cow_info(image=image) for image in images]
+        #cv2.imshow('image', gray)
+        #LOGGER.debug(f'gray shape{gray.shape}')
 
-    # TODO handle no-cow in image
-    if predictions == [] or predictions == [[]]:
-        print('Empty prediction!')
-        return [], images, []
+        # TODO handle no-cow in image
+        if predictions == [] or predictions == [[]]:
+            LOGGER.error('Empty prediction!')
+            return [], images, []
 
-    # capture individual cows out of image
-    crops = [[getcrop(gray, pred) for pred in prediction] for gray, prediction in zip(grays, predictions)]
+        # capture individual cows out of image
+        crops = [[getcrop(gray, pred) for pred in prediction] for gray, prediction in zip(grays, predictions)]
 
-    # concatenate images as batch
-    X = [np.asarray([preprocess(im, target_size=weigh_model.input_shape[1:3]) for im in images]) for images in crops]
-    #print(X.shape)
-    if MULTIVIEW:
+        # concatenate images as batch
+        X = [np.asarray([preprocess(im, target_size=weigh_model.input_shape[1:3]) for im in images]) for images in crops]
+
+        #LOGGER.debug(X.shape)
+        if MULTIVIEW:
+            # TODO
+            # X = np.concatenate([X[0], X[1], np.zeros(X[0].shape)], axis=3)
+            pass
+
+        # predict the weight
+        if X == []:
+            LOGGER.error('No cows! Returning..')
+            return [], images, []
+
+        weights = [weigh_model.predict(_x) for _x in X]
+        weights = [[w[0] for w in weight] for weight in weights] # repack weights
+
+        # calculate confidence
         # TODO
-        # X = np.concatenate([X[0], X[1], np.zeros(X[0].shape)], axis=3)
-        pass
 
-    # predict the weight
-    if X == []:
-        print('No cows! Returning..')
-        return [], images, []
-
-    weights = [weigh_model.predict(_x) for _x in X]
-    weights = [[w[0] for w in weight] for weight in weights] # repack weights
-
-    # calculate confidence
-    # TODO
-
-    # render bounding box and weight on original image
-    images = [drawboxes(image, prediction, weight) for image, prediction, weight in zip(images, predictions, weights)]
-
+        # render bounding box and weight on original image
+        images = [drawboxes(image, prediction, weight) for image, prediction, weight in zip(images, predictions, weights)]
+    except Exception as ex:
+        LOGGER.exception(f'Could not complete prediction: {ex}')
+        return [], [], []
     return crops, images, weights,  # confidence

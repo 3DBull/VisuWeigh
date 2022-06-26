@@ -1,20 +1,20 @@
 
-import sys
-#sys.path.append('../scripts')
+
 import logging
 import tensorflow as tf
 import numpy as np
 import os
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from matplotlib import pyplot as plt
 import json
 import pandas as pd
 from matplotlib.patches import Patch
+from VisuWeigh.lib import paths
 
 LOGGER = logging.getLogger(__name__)
 
 
-def load_img(img_path, target_size, color_mode):
+def _load_img(img_path, target_size, color_mode):
     img = tf.keras.preprocessing.image.load_img(img_path, target_size=None, color_mode=color_mode)
     # img = expand2square(img)
     img = tf.image.resize(img, size=target_size, preserve_aspect_ratio=True, antialias=False)
@@ -22,6 +22,35 @@ def load_img(img_path, target_size, color_mode):
     x = np.expand_dims(x, axis=0)
     x = x / 255.
     return x
+
+
+def _verify_model(model):
+    # Should have 3 dimentions
+    if len(model.input_shape) == 4:
+        # Should have 3 color channels
+        if model.input_shape[3] == 3:
+            return True
+        else:
+            LOGGER.error(f'Model needs to have 3 color channels instead of {model.input_shape[2]} channels')
+    else:
+        LOGGER.error(f'Model input shape needs 4 dimensions, found {len(model.input_shape)} dimensions!')
+
+    return False
+
+
+def _verify_data(d):
+
+    col = ['weight', 'path']
+
+    if not (type(d) == pd.core.frame.DataFrame):
+        LOGGER.error(f'Data needs to be in a pandas DataFrame. Got {type(d)} instead')
+        return False
+
+    if not (all(c in d.columns for c in col)):
+        LOGGER.error(f'Could not find required columns {col} in dataframe')
+        return False
+
+    return True
 
 
 def test_on_image(models, image_frame, model_labels=[], display_each=True, display_width=3):
@@ -38,6 +67,10 @@ def test_on_image(models, image_frame, model_labels=[], display_each=True, displ
     :param axis: The plot axis to attach the graphics to.
     :return: Prints the average error and accuracy of the given test set. Returns the accuracy score.
     """
+
+    if not _verify_data(image_frame):
+        LOGGER.info(image_frame)
+        return None
 
     # handle model_labels length mismatch
     if len(model_labels) == 0:
@@ -70,11 +103,15 @@ def test_on_image(models, image_frame, model_labels=[], display_each=True, displ
         img_path = image_frame.iloc[i].path
 
         if os.path.exists(img_path):
-            x = load_img(img_path, target_size=(224, 224), color_mode='rgb')
+
 
             # get predictions from each model to be tested
             for j, model in enumerate(models):
+                if not _verify_model(model):
+                    LOGGER.error(f'The model {model_labels[j]} with input shape {model.input_shape} has a problem')
+                    return None
 
+                x = _load_img(img_path, target_size=model.input_shape[1:3], color_mode='rgb')
                 # set the color mode based on the number of color channels in the model
                 if model.input_shape[3] == 1:
                     x_ = x[:, :, :, 1]
@@ -101,8 +138,7 @@ def test_on_image(models, image_frame, model_labels=[], display_each=True, displ
                 im = a.imshow(np.squeeze(x_), extent=[0, 224, 0, 224])
                 horiz = np.array(range(barwidth, len(pred) * barwidth + barwidth, barwidth))
                 MAA = (1 - np.abs(np.full(len(pred), image_frame.iloc[i].weight) - np.array(pred)) / np.full(len(pred),
-                                                                                                             image_frame.iloc[
-                                                                                                                 i].weight)) * 100
+                        image_frame.iloc[i].weight)) * 100
 
                 ax_.bar(x=horiz, tick_label=model_labels, width=barwidth, linewidth=2, edgecolor='black', height=MAA,
                         alpha=0.5)
@@ -160,19 +196,18 @@ def test_on_image(models, image_frame, model_labels=[], display_each=True, displ
         #plt.show() # can be used in a single_threaded environment only
 
     # calculate the error and accuracy as an average for the set
-    # print('{} average Error Rate: {:.2f}%'.format(model_labels[j], error[j]*100 / (len(image_frame) - non_existent)))
     MAA = (1 - accum_err / (len(image_frame) - non_existent)) * 100
 
     stats = []
     for i, label in enumerate(model_labels):
-        print('{} average accuracy: {:.2f}%'.format(label, MAA[i]))
-
+        LOGGER.info('{} average accuracy: {:.2f}%'.format(label, MAA[i]))
         p = error[i, :]
-        stats.append({'name': label, 'mean_abs_accuracy': MAA[i], 'mean_abs_error': np.mean(np.abs(p)),
+        MAE = np.mean(np.abs(p))
+        stats.append({'name': label, 'mean_abs_accuracy': MAA[i], 'mean_abs_error': MAE,
                       'error_mean': np.mean(p), 'error_std': np.std(p), 'error_min': min(p), 'error_max': max(p)})
 
+
     if display_each:
-        LOGGER.info("showing images")
         return fig, stats
     else:
 
@@ -183,26 +218,102 @@ def has_image(path):
     return os.path.exists(path)
 
 
+def _prep_data(d):
+    # if we need to tweak anything in the data on the way out, this is where we do it
+    d.timestamp = pd.to_datetime(d['timestamp'], unit='ms')
+
+    d.path = d.path.str.replace('singles', 'img')
+
+    # Ensure the data has images
+    d = d[d.path.apply(has_image)]
+
+    # trim the data to a constrained weight range
+    d = d[(d.weight > paths.config['weight_constraint']['lower']) & (
+                d.weight < paths.config['weight_constraint']['upper'])]
+
+    return d
+
 def load_and_prep_data(path):
     '''
     Use this function to load training data. The data is loaded from the directory and file provided.
     Data is only kept if it has a valid image and in the range 400-1400 lb.
 
-    :param path_to_database:
-    :param dataset: Json file containing records with column names 'weight', 'timestamp', and 'path'
+    :param path: path to the json file containing records with column names 'weight', 'timestamp', and 'path'
     :return: Pandas DataFrame
     '''
     # load training data
     with open(path, 'r') as file:
         frame = json.load(file)
     df = pd.DataFrame(frame)
-    df.timestamp = pd.to_datetime(df['timestamp'], unit='ms')
-    print(f'Found {len(df)} raw data points!')
 
-    df.path = df.path.str.replace('singles', 'img')
-    df = df[df.path.apply(has_image)]
-    # trim the data to a constrained weight range
-    df_trim = df[(df.weight > 400) & (df.weight < 1450)]
-    print(f'Loaded {len(df_trim)} filtered data points!')
+    df = _prep_data(df)
+    LOGGER.info(f'Loaded {len(df)} data points!')
 
-    return df_trim
+    return df
+
+def load_all_json(path):
+    '''
+    Similar to load_and_prep_data except that this function takes a path to a directory with multiple files. It returns
+    a pandas dataframe with the combined data from all the files.
+    :param path: path to the directory containing the data
+    :return: Pandas DataFrame
+    '''
+    f_names = []
+    for name in os.listdir(path):
+        if name.endswith('.json'):
+            f_names.append(name)
+    LOGGER.info('Found {} files.'.format(len(f_names)))
+
+    # load the dataset
+    with open(os.path.join(path, f_names.pop()), 'r') as file:
+        frame = json.load(file)
+
+    # add any other datasets in the folder
+    for name in f_names:
+        with open(os.path.join(path, name), 'r') as file:
+            frame.extend(json.load(file))
+
+    df = pd.DataFrame(frame)
+
+    df = _prep_data(df)
+    LOGGER.info(f'Found {len(df)} data points!')
+
+    return df
+
+
+def load_eval_data():
+    eval_names = os.listdir(paths.EVALUATION_DATA)
+    LOGGER.debug(f'Retrieving data from {eval_names}')
+    d = pd.concat([load_all_json(os.path.join(paths.EVALUATION_DATA, name)) for name in eval_names], axis=0)
+    return d
+
+
+def evaluate_model(model_path=None, model=None, df=None):
+    '''
+    Provide either a model or model_path to evaluate a model. If no dataframe is provided,
+    the default evaluation set will be used.
+    :param model:
+    :param model_path:
+    :param df: dataframe to evaluate on
+    :return: results with the schema {}
+    '''
+    if model is None:
+        if model_path is None:
+            raise ValueError('Please Specify a model path or provide a model to the function!')
+        else:
+            model = tf.keras.models.load_model(model_path)
+
+        model_name = [model_path.split('/')[-1]]
+
+    else:
+        model_name = []
+
+    if df is None:
+        LOGGER.warning(f'No data provided, Evaluating model on entire evaluation set')
+        df = load_eval_data()
+
+    results = test_on_image([model], df, model_labels=model_name, display_each=False)
+    del model
+
+    return results
+

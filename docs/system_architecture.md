@@ -38,11 +38,11 @@ The ETL task collects all the raw data files found in the database folder. [See 
 ### Output
 The output is a single json file with the cleaned database stored in it. The json data includes the columns: [timestamp, weight, auction, path] The file is stored in the training folder along with the cropped images prepared for the training network. 
 
-## Machine Learning
-Models are experimented with and developed. Once a model is ready to be trained on the data it is placed in the `cattle_data/models/build/` folder. Any model that is placed in this folder will be included in the regular training and evaluation process. Models are trained when the amount of data in the training folder changes by a significant amount (5000 points) since the last training. 
+## Training
+Models are experimented with and developed. Once a model is ready to be trained on the data it is pickled and placed in the `cattle_data/models/build/` folder. Any model that is placed in this folder will be included in the regular training and evaluation process. Models are trained when the amount of data in the training folder changes by a significant amount (5000 points) since the last training. 
 
 ### Input
-The input to the ML part of the system is the `inputs` folder in the database. Each model should be a `model_name.py` python file that returns a compiled keras model.
+The input to the ML part of the system is the `build` folder in the database. Each model should be a `model_name.pkl` file that contains a built keras model.
 
 ### Ouput
 The output from the ML process is a folder that contains all the trained models: `cattle_data/models/trained/` in the database.
@@ -52,12 +52,12 @@ Once training is completed, the evaluation process is initiated. Each model that
 
 1. Mean absolute error as an error metric: 
 
-    $$ MAE =  \sum \limits _{i=0} ^{N} \frac {|y_i - \hat{y_i}|} {y} $$
+    $$ MAE =  \frac {\sum \limits _{i=0} ^{N} |y_i - \hat{y_i}|} {N} $$
 
 
-2. Mean absoluted accuracy as an accuracy metric:
+2. Mean absoluted accuracy percentage as an accuracy metric:
 
-    $$ MAA = (1 -  \frac{MAE} {N}) * 100 \% $$
+    $$ MAAP = (1 -  {\sum \limits _{i=0} ^{N} \frac {|y_i - \hat{y_i}|} {\hat{y_i}}}) * 100 \% $$
 
 Each model is loaded from the database and evaluated with the above metrics on the data that exists in the `evaluation` folder in the database. 
 After evaluating, the evaluation task tests the best model against the existing model in the `models/serve` directory. 

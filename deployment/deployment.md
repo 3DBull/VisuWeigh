@@ -1,5 +1,0 @@
-# VisuWeigh Deployment
-
----
-
-## Overview

@@ -1,15 +1,13 @@
-
 import logging
 import streamlit as st
-import sys
-sys.path.append('../scripts')
 from cv2 import cv2
 import numpy as np
-from lib.weigh import predict, save
+from VisuWeigh.lib.weigh import predict, save_client_info
 from datetime import datetime as dt
-
 import os
-from lib import static, paths
+from VisuWeigh.lib import static, paths
+
+LOGGER = logging.getLogger(__name__)
 
 st.set_page_config(page_title='Visual Weighing Tool', page_icon='icon.png')
 
@@ -28,6 +26,8 @@ static.initialize({
 @st.experimental_memo
 def weigh(images):
 
+    weigh.init_client_dir(client_data_path)
+
     with open(os.path.join(client_data_path, 'pcount.txt'), 'r+') as f:
         cow_count = int(f.read())
         cow_count = 1 + cow_count
@@ -37,7 +37,14 @@ def weigh(images):
 
     logging.info('cow_count: ' + str(static.getVar('cow_count')))
     st.session_state.submitted = False
-    return predict(images=images)
+
+    try:
+        results = predict(images=images)
+    except ValueError as er:
+        LOGGER.error(f'Missing data. Cannot perform prediction. {er}')
+        return None
+
+    return results
 
 
 st.title('Hi There!')
@@ -117,7 +124,7 @@ try:
 
                             if a_weight > 0:
                                 logging.info(f'Count: {static.getVar("cow_count")}_{input_id}, Weight: {a_weight}')
-                                save(image, client_data_path, f'{static.getVar("cow_count")}_{input_id}', a_weight,
+                                save_client_info(image, client_data_path, f'{static.getVar("cow_count")}_{input_id}', a_weight,
                                      p_weight)
 
                     st.session_state.submitted = st.form_submit_button()

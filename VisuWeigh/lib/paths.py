@@ -55,9 +55,15 @@ import requests
 import zipfile
 import logging
 import json
-from lib import paths
+from VisuWeigh.lib import paths
 
-CONFIG_PATH = "../config.json"
+
+def find_config(name):
+    # TODO - Implement search for config so scripts and modules can be run from any level
+    pass
+
+
+CONFIG_PATH = '../config.json'
 
 with open(CONFIG_PATH, "r") as jsonfile:
     config = json.load(jsonfile)
@@ -72,17 +78,17 @@ RAW_IMG = os.path.join(RAW_DATA, 'img')
 # TRAINING
 TRAINING_DATA = os.path.join(DATABASE_LOCATION, 'training')
 TRAINING_IMAGES = os.path.join(TRAINING_DATA, 'img')
+TRAINING_LOGS = os.path.join(DATABASE_LOCATION, 'models', 'training_logs')
 DATASET = 'training.json'
 
 # EVALUATION
-EVALUATION_DATA = os.path.join(DATABASE_LOCATION, 'evaluation')
-EVALUATION_IMG = os.path.join(EVALUATION_DATA, 'img')
-EVALUATION_RESULTS = os.path.join(EVALUATION_DATA, 'results.csv')
+EVALUATION_DATA = os.path.join(DATABASE_LOCATION, 'evaluation', 'datasets')
+EVALUATION_IMG = os.path.join(DATABASE_LOCATION, 'evaluation', 'img')
+EVALUATION_RESULTS = os.path.join(DATABASE_LOCATION, 'evaluation', 'results.csv')
 
 # MODELS
-IN_MODEL_DIR = os.path.join(DATABASE_LOCATION, 'models', 'build')
-OUT_MODEL_DIR = os.path.join(DATABASE_LOCATION, 'models', 'trained')
-TRAINING_LOGS = os.path.join(DATABASE_LOCATION, 'models', 'training_logs')
+MODEL_BUILDS = os.path.join(DATABASE_LOCATION, 'models', 'build')
+TRAINED_MODELS = os.path.join(DATABASE_LOCATION, 'models', 'trained')
 YOLO = os.path.join(DATABASE_LOCATION, 'models', 'yolov3.weights')
 
 # The user can use the project config to overwrite the default path to the server model

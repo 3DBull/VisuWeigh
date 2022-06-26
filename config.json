@@ -1,11 +1,35 @@
 {
   "Name": "VisuWeigh",
-  "Version": "1.0",
+  "Version": "0.1",
   "Database": {
     "root": "E:"
   },
   "Paths": {
     "SERV_MODEL": "",
     "__comment": "leave SERV_MODEL blank to use the default path in the database."
+  },
+  "weight_constraint": {
+    "lower": 400,
+    "upper": 1400
+  },
+  "evaluation_sets":["easy", "hard"],
+  "training": {
+    "batch_size": 6,
+    "steps_per_epoch": 12,
+    "val_steps": 5,
+    "opt" : "adagrad",
+    "cos_anneal" : 1,
+    "fit1": {
+     "to_epoch": 1,
+      "freeze_layers": [0, -3]
+    },
+    "fit2": {
+      "to_epoch": 3,
+      "freeze_layers": [0, 100]
+    },
+    "fit3": {
+      "to_epoch": 5,
+      "freeze_layers": [0, 0]
+    }
   }
 }

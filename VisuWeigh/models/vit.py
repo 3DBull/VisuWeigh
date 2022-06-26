@@ -1,18 +1,20 @@
 # code to build a vision transformer
 # code adapted from: https://keras.io/examples/vision/image_classification_with_vision_transformer/
 # Note: the main difference is that the globalAveragePooling1D is used instead of flatten
-
+import sys
+import os
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow_addons as tfa
+from VisuWeigh.lib import paths
+import pickle
 
 
 learning_rate = 0.001
 weight_decay = 0.0001
 batch_size = 32
-num_epochs = 100
 image_size = 224  # We'll resize input images to this size
 patch_size = 6  # Size of the patches to be extract from the input images
 num_patches = (image_size // patch_size) ** 2
@@ -27,7 +29,6 @@ mlp_head_units = [2048, 1024]  # Size of the dense layers of the final classifie
 
 positional_emb = True
 conv_layers = 2
-#projection_dim = 128
 
 stochastic_depth_rate = 0.1
 
@@ -116,7 +117,7 @@ class CCTTokenizer(layers.Layer):
         pooling_kernel_size=3,
         pooling_stride=2,
         num_conv_layers=conv_layers,
-        num_output_channels=[64, 128],
+        num_output_channels=[66, 128],
         positional_emb=positional_emb,
         **kwargs,
     ):
@@ -158,7 +159,7 @@ class CCTTokenizer(layers.Layer):
         # the number of sequences and initialize an `Embedding` layer to
         # compute the positional embeddings later.
         if self.positional_emb:
-            dummy_inputs = tf.ones((1, image_size, image_size, 1))
+            dummy_inputs = tf.ones((1, image_size, image_size, 3))
             dummy_outputs = self.call(dummy_inputs)
             sequence_length = tf.shape(dummy_outputs)[1]
             projection_dim = tf.shape(dummy_outputs)[-1]
@@ -179,7 +180,7 @@ class StochasticDepth(layers.Layer):
     def call(self, x, training=None):
         if training:
             keep_prob = 1 - self.drop_prob
-            shape = (tf.shape(x)[0],) + (1,) * (len(tf.shape(x)) - 1)
+            shape = (tf.shape(x)[0],) + (1,) * ((tf.shape(x).shape[0]) - 1)
             random_tensor = keep_prob + tf.random.uniform(shape, 0, 1)
             random_tensor = tf.floor(random_tensor)
             return (x / keep_prob) * random_tensor
@@ -187,14 +188,13 @@ class StochasticDepth(layers.Layer):
 
 def create_cct_model(
     image_size=image_size,
-    input_shape=(224, 224, 1),
+    input_shape=(224, 224, 3),
     num_heads=num_heads,
     projection_dim=projection_dim,
     transformer_units=transformer_units,
 ):
 
     inputs = layers.Input(input_shape)
-
     # Augment data.
     #augmented = data_augmentation(inputs)
 
@@ -249,3 +249,25 @@ def create_cct_model(
     # Create the Keras model.
     model = keras.Model(inputs=inputs, outputs=logits)
     return model
+
+
+if __name__ == "__main__":
+
+
+    if sys.argv[1] == 'cct':
+        model = create_cct_model()
+    elif sys.argv[1] == 'vit':
+        model = create_vit_model((224, 224, 3), 1)
+    else:
+        print('Usage:')
+        print('  vit.py model name')
+        print('  model: can be either "vit" or "cct"')
+        exit(1)
+
+    model.summary()
+    name = sys.argv[2]
+    model.save(os.path.join(paths.MODEL_BUILDS, name))
+
+
+
+
