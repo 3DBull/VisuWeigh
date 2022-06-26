@@ -31,9 +31,10 @@ of their development and how they are used. Use the links below to learn about a
 ### Related Work
 Companies like [agroninja](https://agroninja.com/) have developed an app for cattle weighing from images. agronija's app uses 
 an image of the cow and prompt the user to input points onto the image in key locations on the cow. These apps are 
-cumbersome to use and impractical to use at scale. It works to get a 4H cow to pose for a picture, but if a producer, or market
-wants to obtain regular weights on a large scale farm a larger scale solution is needed. One such solution is the 
-[ClickR](https://clicrweight.com/) solution. They have 
+cumbersome to use and impractical to use at scale. They are mostly suited for 4H and other single cow use applications. 
+If a producer, or market wants to obtain regular weights on a large scale farm a larger scale solution is needed. 
+One such solution is the [ClickR](https://clicrweight.com/) solution. There is not a lot of information on the 
+effectiveness of this tool and the technology is proprietary. 
 
 Other research has show that estimating the weight of cattle from images can be effective. 
 M. Gjergji et al. [[1]](#references-and-related-works) were able to achieve MAE of 23.19kg with convolutional neural 
