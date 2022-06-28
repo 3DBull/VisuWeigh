@@ -2,7 +2,7 @@ import logging
 import streamlit as st
 from cv2 import cv2
 import numpy as np
-from VisuWeigh.lib.weigh import predict, save_client_info
+from VisuWeigh.lib.weigh import predict, save_client_info, init_client_dir
 from datetime import datetime as dt
 import os
 from VisuWeigh.lib import static, paths
@@ -26,9 +26,9 @@ static.initialize({
 @st.experimental_memo
 def weigh(images):
 
-    weigh.init_client_dir(client_data_path)
+    init_client_dir(client_data_path)
 
-    with open(os.path.join(client_data_path, 'pcount.txt'), 'r+') as f:
+    with open(os.path.join(client_data_path, 'pcount'), 'r+') as f:
         cow_count = int(f.read())
         cow_count = 1 + cow_count
         f.seek(0)
@@ -49,8 +49,8 @@ def weigh(images):
 
 st.title('Hi There!')
 st.write("You've found it! This is the place to try out the revolutionary cattle weighing app!")
-st.write(
-    "Just select an image to upload or take a picture with your camera, and we'll handle the rest of the heavy lifting! It's that Easy!")
+st.write("Just select an image to upload or take a picture with your camera, and we'll handle the rest of the heavy"
+         " lifting! It's that Easy!")
 st.write('')
 st.write("Don't have a cow around to try it on? Try one of ours from the sidebar!")
 

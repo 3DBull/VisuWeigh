@@ -49,6 +49,7 @@ def select_data(weight_range, source):
 
 @st.experimental_memo(suppress_st_warning=True)
 def test_models(names, data):
+
     models = [tf.keras.models.load_model(os.path.join(MODEL_PATH, name)) for name in names]
     return util.test_on_image(models, data, model_labels=names, display_width=3)
 

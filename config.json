@@ -2,7 +2,7 @@
   "Name": "VisuWeigh",
   "Version": "0.1",
   "Database": {
-    "root": "E:"
+    "root": "\\\\192.168.0.179\\"
   },
   "Paths": {
     "SERV_MODEL": "",

@@ -1,7 +1,7 @@
 '''
 The VisuWeigh Project
 
-This module is used to weigh a cow from on image.
+This module is used to weigh a cow from an image.
 
 Updated 2022-06-20
 By Derek Syme
@@ -107,7 +107,7 @@ def init_client_dir(path):
         LOGGER.warning(f'Could not find client data folder at {path}. Creating a new directory.')
         os.mkdir(path)
         os.mkdir(os.path.join(path, 'img'))
-        with open(os.path.join(path, 'pcount.txt'), 'w') as f:
+        with open(os.path.join(path, 'pcount'), 'w') as f:
             f.write(0)
         with open(os.path.join(path, 'client_data.json'), 'w') as f:
             f.write('[]')

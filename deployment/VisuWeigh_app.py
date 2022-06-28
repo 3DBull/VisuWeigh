@@ -1,7 +1,6 @@
 
 import streamlit as st
 
-
 # Setup page
 st.set_page_config(page_title='Visual Weighing Tool', page_icon='icon.png')
 

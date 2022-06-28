@@ -101,9 +101,8 @@ def test_on_image(models, image_frame, model_labels=[], display_each=True, displ
     for i in range(len(image_frame)):
 
         img_path = image_frame.iloc[i].path
-
+        print(img_path)
         if os.path.exists(img_path):
-
 
             # get predictions from each model to be tested
             for j, model in enumerate(models):
@@ -222,7 +221,10 @@ def _prep_data(d):
     # if we need to tweak anything in the data on the way out, this is where we do it
     d.timestamp = pd.to_datetime(d['timestamp'], unit='ms')
 
+    # fix the path string
     d.path = d.path.str.replace('singles', 'img')
+    d.path = d.path.str.replace(r'E:\\', paths.config['Database']['root'], regex=False)
+    d.path = d.path.str.replace(r'E:/', paths.config['Database']['root'], regex=False)
 
     # Ensure the data has images
     d = d[d.path.apply(has_image)]
@@ -233,7 +235,7 @@ def _prep_data(d):
 
     return d
 
-def load_and_prep_data(path):
+def load_and_prep_data(path, prep=True):
     '''
     Use this function to load training data. The data is loaded from the directory and file provided.
     Data is only kept if it has a valid image and in the range 400-1400 lb.
@@ -246,12 +248,14 @@ def load_and_prep_data(path):
         frame = json.load(file)
     df = pd.DataFrame(frame)
 
-    df = _prep_data(df)
+    if prep:
+        df = _prep_data(df)
+
     LOGGER.info(f'Loaded {len(df)} data points!')
 
     return df
 
-def load_all_json(path):
+def load_all_json(path, prep=True):
     '''
     Similar to load_and_prep_data except that this function takes a path to a directory with multiple files. It returns
     a pandas dataframe with the combined data from all the files.
@@ -268,6 +272,7 @@ def load_all_json(path):
     with open(os.path.join(path, f_names.pop()), 'r') as file:
         frame = json.load(file)
 
+
     # add any other datasets in the folder
     for name in f_names:
         with open(os.path.join(path, name), 'r') as file:
@@ -275,7 +280,9 @@ def load_all_json(path):
 
     df = pd.DataFrame(frame)
 
-    df = _prep_data(df)
+    if prep:
+        df = _prep_data(df)
+
     LOGGER.info(f'Found {len(df)} data points!')
 
     return df
