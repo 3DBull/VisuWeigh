@@ -101,7 +101,6 @@ def test_on_image(models, image_frame, model_labels=[], display_each=True, displ
     for i in range(len(image_frame)):
 
         img_path = image_frame.iloc[i].path
-        print(img_path)
         if os.path.exists(img_path):
 
             # get predictions from each model to be tested
@@ -154,7 +153,7 @@ def test_on_image(models, image_frame, model_labels=[], display_each=True, displ
 
                 # print weight values
                 for k, val in enumerate(pred):
-                    ax_1.text(224 - horiz[k] - 4, val / 2 - 200, '{:.1f}lb'.format(val), color='white',
+                    ax_1.text(224 - horiz[-(k+1)] - 4, val / 2 - 200, '{:.1f}lb'.format(val), color='white',
                               fontweight='bold', rotation='vertical', size=font_size)
 
                 # ax_.set_aspect('equal', adjustable=None, anchor=None, share=False)

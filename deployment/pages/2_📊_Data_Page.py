@@ -127,7 +127,7 @@ if len(selected_models):
                 st.latex(r''' MAE =  \frac {\sum \limits _{i=0} ^{N} |y_i - \hat{y_i}|} {N}''')
 
 
-                st.write('2. Mean absoluted accuracy percentage as an accuracy metric:')
+                st.write('2. Mean absolute accuracy percentage as an accuracy metric:')
 
                 st.latex(r'''MAAP = (1 -  {\sum \limits _{i=0} ^{N} \frac {|y_i - \hat{y_i}|} {\hat{y_i}}}) * 100 \%''')
 

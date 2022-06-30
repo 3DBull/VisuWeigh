@@ -73,17 +73,17 @@ def _clean_numerical_data(df):
 
     return df
 
-def has_image(img_id, auction):
+def has_image(d):
     """
     ### Drop Data with no Images
-    :param img_id: the raw image id
-    :param auction: the source folder
+    :param d: The row of the dataframe
     :return: a boolean of image existence
     """
-    if os.path.exists('{}/{}/im_{}.png'.format(paths.RAW_DATA, auction, img_id)):
-        return True
+    auc = d.auction
+    img_id = d.IMG_ID
+    path = '{}/img/{}/im_{}.png'.format(paths.RAW_DATA, auc, img_id)
+    return os.path.exists(path)
 
-    return False
 
 
 def adj_timing(d):
@@ -252,6 +252,7 @@ class DataCleaner:
 
             LOGGER.info('Found {} files.'.format(len(f_names)))
             LOGGER.info('Loaded {} datapoints!'.format(len(d)))
+            print(f'Found  {len(d)} points!')
         except Exception as ex:
             LOGGER.exception(f'Could not load data from {path}: {ex}')
             exit(1)
@@ -336,6 +337,13 @@ class DataCleaner:
             exit(1)
         return u_predict
 
+    def get_output_path(self, d):
+        """
+        Create a path column
+        :return: path
+        """
+        return '{}/{}_{}_{}.png'.format(self.output_img_path, d.auction, d.lot_num, d.img_id)
+
     def save_cropped(self, d):
         """
         Save the images in the training set to a separate folder after cropping them.
@@ -380,6 +388,7 @@ class DataCleaner:
         self.i = 0
         self.err = 0
         self.pbar = tqdm(total=len(df))
+        print('Adjusting Threshold...')
         df['adj_prediction'] = df.dropna().apply(self._adjust_prediction_threshold, axis=1)
         LOGGER.warning(f'Found {str(self.err)} images with errors')
 
@@ -389,21 +398,18 @@ class DataCleaner:
         df = df[(df.Timestamp.diff().dt.seconds < min_time) | (df.Timestamp.diff().dt.seconds > 8)]
 
         # Only keep data that actually has a corresponding image
-        df = df[df.IMG_ID.apply(has_image, args=['auction'], axis=1)]
+        df = df[df.apply(has_image, axis=1)]
 
         LOGGER.info(f'Length of dataset after removing irrelevant data: {len(df)}')
-
+        print(f'Length after removing irrelavent {len(df)}')
         # remove points with collision errors
         def is_error(pred):
             if len(pred) == 1:
                 return pred[0] == 'IMAGE_ERROR'
             else:
                 return False
-        df = df[df.prediction.apply(is_error) == False]
-
-
-
-
+        df = df[~df.prediction.apply(is_error)]
+        print(f'Length after removing error {len(df)}')
         # ### Add Columns Describing the number of cows
         # Add columns two columns to the data set:
         # > * num_cows : describes the number of cows from the given information
@@ -422,20 +428,21 @@ class DataCleaner:
 
         # ### Add has_cow column
         # If we do not wish to use a threshold...
-        df['has_cow'] = df.predicted_num_cows>0
+        df['has_cow'] = df.predicted_num_cows > 0
 
 
         # Diferentiate
         df['weight_change'] = ((df.Avg_Weight.diff()!=0))*5
 
         # Run the timing adjustment on all the auctions
+        print('Running Timing Adjustment...')
         rimbey_df = adj_timing(df[df.auction == 'rimbey'])
         westlock_df = adj_timing(df[df.auction == 'westlock'])
         dawson_df = adj_timing(df[df.auction == 'dawson_creek'])
         ponoka_df = adj_timing(df[df.auction == 'ponoka'])
         beaverlodge_df = adj_timing(df[df.auction == 'beaverlodge'])
 
-
+        print(f'Length after adjusting timing {len(df)}')
 
         # Extract Only Single Cow Lots <a class="anchor" id="extractsingle"></a>
         # we can concatinate the data now that the timing is shifted already.
@@ -451,9 +458,13 @@ class DataCleaner:
         # all points should only have one prediction so pick the best one
         singles_df.prediction = singles_df.prediction.apply(pick_best_pred)
 
+        print(f'Singles length:  {len(df)}')
         LOGGER.info("Singles dataframe length: {}".format(len(singles_df)))
         LOGGER.info("Original dataframe length: {}".format(len(df)))
 
+        if len(df) < 1:
+            LOGGER.error('It looks like theres no data left after cleaning!')
+            exit(0)
 
         # ## Generate Training Data <a class="anchor" id="generatetraining"></a>
         # We will use all the single cow lots for training data.
@@ -464,20 +475,18 @@ class DataCleaner:
         # These images are saved in the `training/singles` folder
 
         # Make the output directory if it does not exist
-        if not os.path.exists(os.path.join(self.output_path)):
-            os.mkdir(os.path.join(self.output_path))
+        if not os.path.exists(os.path.join(self.output_path, 'singles')):
+            os.mkdir(os.path.join(self.output_path, 'singles'))
 
-        # create a path column
-        def get_output_path(d):
-            return '{}/{}_{}_{}.png'.format(self.output_img_path, d.auction, d.lot_num, d.img_id)
-        singles_df['path'] = singles_df.apply(get_output_path, axis=1)
+        # add the image path to the dataframe
+        singles_df['path'] = singles_df.apply(self.get_output_path, axis=1)
 
         # save the training data
         self.save_df(singles_df.drop(columns=['img_id', 'num_cows', 'old_weight', 'predicted_num_cows']))
 
         # save the cropped images
         self.pbar = tqdm(total=len(singles_df))
-        singles_df.apply(self.save_cropped, axis=1);
+        singles_df.apply(self.save_cropped, axis=1)
 
         return singles_df
 
