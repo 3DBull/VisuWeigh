@@ -196,9 +196,9 @@ These last three metrics are included to show us the extremes of the error for r
 
 ### Results
 
-| name                              |   mean_abs_accuracy |   mean_abs_error |   error_mean |   error_std |   error_min |   error_max | data_set     |   max_abs_error | architecture   | opt     |
-|----:|:----------------------------------|--------------------:|-----------------:|-------------:|------------:|------------:|------------:|:-------------|----------------:|:---------------|:--------|
-|  62 | iceptres_freeze_adagrad_194_9939  |             88.0444 |          83.58   |     -6.42346 |    108.462  |    -497.868 |     425.524 | hard         |         923.392 | iceptres       | adagrad |
+ name | mean_abs_accuracy |mean_abs_error |   error_mean |   error_std |   error_min |   error_max | data_set  | max_abs_error | architecture | opt     
+----:|:----------------------------------|--------------------:|-----------------:|-------------:|------------:|------------:|------------:|:-------------|----------------:|:---------------|:--------
+  62 | iceptres_freeze_adagrad_194_9939  |             88.0444 |          83.58   |     -6.42346 |    108.462  |    -497.868 |     425.524 | hard                 923.392 | iceptres       | adagrad |
 |  57 | iceptres_freeze_adagrad_172_11404 |             88.1085 |          80.8649 |      2.70067 |    104.936  |    -457.388 |     483.398 | easy         |         940.786 | iceptres       | adagrad |
 |  61 | iceptres_freeze_adagrad_194_9939  |             90.7585 |          64.1277 |    -18.1107  |     82.8528 |    -367.898 |     378.778 | hand_cleaned |         746.676 | iceptres       | adagrad |
 | 213 | incept_freeze_adagrad_241_11832   |             88.1029 |          81.6219 |     -4.04257 |    107.434  |    -456.223 |     427.787 | easy         |         884.01  | incept         | adagrad |
