@@ -5,7 +5,7 @@ pipeline. A level of effectiveness is desired before formalizing and documenting
 Development roughly followed the following procedure: 
 
 1. List the desired outcomes 
-2. Experiment with the data and code in jupyter notebooks 
+2. Experiment with the data and code in Jupyter notebooks 
 3. Create prototype solutions that achieve the desired results
 4. Revise the desired outcomes and the processes for achieving them
 5. Reiterate the process
@@ -18,14 +18,13 @@ robust system.
 The project is divided into five major modules. The development of these modules will be discussed in more detail in the 
 following sections. 
 
-1. [Collect](#collect) 
+1. [Collect](#1.collect) 
 2. [Clean](#clean)
-3. [Train](#train)
+3. [Train](#3.train)
 4. [Evaluate](#evaluate)
 5. [Deploy](#deploy)
 
-
-## Collect
+## 1.Collect
 After finding very limited data availability for this project, two methods were considered for data collection. 
 1. Collect data from a farm with a scale and camera apparatus
 2. Scrape relevant data from online auction sites  
@@ -131,7 +130,7 @@ The final training distribution is as follows:
 
 ![img_8.png](img_8.png)
 
-## Train
+## 3.Train
 Training is implemented for automated model testing. The training script trains any model placed in the built models folder of the database.
 Parameters for training are set in a .json configuration file. This allows for the fast iterative approach that is necessary for machine learning.
 
