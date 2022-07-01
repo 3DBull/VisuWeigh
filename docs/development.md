@@ -26,7 +26,51 @@ following sections.
 
 
 ## Collect
+After finding very limited data availability for this project, two methods were considered for data collection. 
+1. Collect data from a farm with a scale and camera apparatus
+2. Scrape relevant data from online auction sites  
 
+While the first approach offered the opportunity for higher quality data, it would be expensive and time consuming to 
+set up. In addition, many set ups would have to be put in place on many farms to get a variety of animal information. 
+The second option was chosen even though the data is lower quality due to the availability, variety, and quantity of data. 
+
+### Implementation of Web Scraper
+Web scraping was started with “scrapy”, a python library that is common for scrawling websites and scraping data. 
+Although, promising at first, scrapy proved too limiting in capability for the complexity of the JavaScript auction sites. 
+I moved to a more powerful library called “selenium” which could handle the intricacies of digging into the site. 
+This was effective in simulating human input to pass the verification as well as load and parse the JavaScript window.
+
+### Building the Pipline
+Once the collection was started, there were many challenges that arose in getting accurate information. 
+The main challenge was from the timing of the information. ON the auction stream the cows are run through in batches, 
+as they are allowed to enter, the information is placed on the website by someone on site. This manual entry of information 
+means the data is often delayed with respect to the images. Sometimes the information would change several times before 
+the correct information would be displayed. Sometimes the information for a cow or group of cows would not be displayed 
+at all. A few strategies were attempted to avoid bad data from these inconsistencies. 
+The first method was to record information only after a switch in weight, then stop recording after a certain length of 
+time. This worked with a measure of accuracy, but bad data was still being collected. 
+The second attempt included a cow detection for each collection point using the yolov3 neural network. Surprisingly, 
+this made the data only slightly cleaner. 
+On the third attempt, the cleaning of data was taken offline and correlated larger chunks of data at a time. 
+This allowed for all the raw data to be collected for future utilization. Processing the network on every datapoint was 
+extremely time-consuming. Some effort was extended to implementing multiprocessing for the offline job. The full
+prediction of any cow data was added to the dataset in this stage. This prevented the need to run the predictor
+on the dataset again at a later time. 
+Once the processing time was decreased with utilizing multiple cores, the prediction process was placed back online in 
+the collection script. Three workers were implemented for predicting and saving the data while the main script grabbed 
+the data every second and placed it in a queue for the workers. With this optimization, I was even able to run two 
+instances of the collection program at the same time pulling from two different auction locations simultaneously.  
+Unfortunately, with no filtering on the data collection end, very high volumes of data must be collected and stored. 
+The first side effect of collected a large amount of data was file size. All my structured data was stored in one file, 
+which caused slower read/write access. The scraper program was then modified to create a new file for every unique day 
+and auction location. After this optimization, the bottleneck was the hard drive. Using an external HDD for data storage 
+created a read/write bottleneck especially when collecting from two auctions simultaneously. The queues would back up 
+with data to be written. This is ok as long as the memory/paging file is a sufficient size, but not acceptable as the 
+project scales. A hardware change to M.2 SSD to support the data volume needs.  
+
+The auctions run in different locations on different days of the week. I was able to automate the process of collecting 
+from these different locations at different times using the Windows Task Scheduler. After performing the multiprocessing 
+optimizations, I was able to schedule more than one auction at a time.
 
 ## Clean
 One of the most important aspects of machine learning is data cleaning. Careful consideration must be made for what makes
@@ -100,9 +144,6 @@ During training, the model parameters are embedded into  the name of the model. 
 model can easily be identified in tensorboard. 
 For the evaluation process, these embeddings can be decoded and compared. 
 
-The training process was developed as more images were being collected. As more data was collected, the process is repeated 
-with the new data. An experiment was performed to view the trend in increased performance versus the amount of data collected.
-The details and results of that expiriment can be found in the [scaling notebook.](../notebooks/4_scaling.ipynb) 
 
 ### The Data
 Training begins with the cleaned dataset and utilizes it for three main operations. 
@@ -119,21 +160,29 @@ and the data has multiple images of each cow, it is possible that some pictures 
 as the testing set. To achieve a more reliable evaluation of our models, we will use data that has been recently added 
 to the dataset. This way the entire evaluation set will be new cows.
 
+### Scaling
+The training process was developed as more images were being collected. As more data was collected, the process is repeated 
+with the new data. An experiment was performed to view the trend in increased performance versus the amount of data collected.
+The details and results of that experiment can be found in the [scaling notebook.](../notebooks/4_scaling.ipynb)
+The scaling process was performed on the Xception network. Subsequent iterations of this experiment should be performed 
+to compare the effects of data amount on a CNN versus a Transformer. 
 
 ### Models
 Most of the models used are common models initialized with pre-trained weights. The transfer learning approach is used to 
 adapt these pre-trained models to the cattle weight dataset. The idea is that some knowledge obtained by those models 
-in other domains can be utilized in this domain. 
+in other domains can be utilized in this domain.
 Multiple iterations of the training process were performed for the following models:
 1. Xception 
 2. Inception
 3. InceptionRes
 4. Resnet152
-5. Resnet50
-6. A custom CNN
-7. A Muti-Image CNN
-8. Transformer
-9. Vgg19
+5. A custom CNN
+6. Vgg19
+
+Other models attempted in earlier iterations but did not have promising results:
+1. A Custom CNN 
+2. Resnet50
+3. A Vision Transformer 
 
 For more information on the training process and results, see the training [notebooks](../notebooks).
 
@@ -179,10 +228,10 @@ more sensitive toward lighter animals of which the accuracy is of greater import
 to the health of the animal. 
 
 Other metrics were added for extra insights: 
-1. Mean Error
-
+1. Mean Error  
     This metric is included to observe the bias of the model. There is a greater amount of training data in the 500-700lb 
-range. If a model is trained poorly, it could be "guessing" low on higher weight cows. This metric will catch that bias. 
+range. If a model is trained poorly, it could be "guessing" low on higher weight cows. This metric will catch that bias.  
+
 
 2. Error STD
 
@@ -195,24 +244,9 @@ Helps us understand the distribution of the error.
 These last three metrics are included to show us the extremes of the error for reliability purposes. 
 
 ### Results
+The following table shows the evaluation results of models trained on 65,000 images.  
 
- name | mean_abs_accuracy |mean_abs_error |   error_mean |   error_std |   error_min |   error_max | data_set  | max_abs_error | architecture | opt     
-----:|:----------------------------------|--------------------:|-----------------:|-------------:|------------:|------------:|------------:|:-------------|----------------:|:---------------|:--------
-  62 | iceptres_freeze_adagrad_194_9939  |             88.0444 |          83.58   |     -6.42346 |    108.462  |    -497.868 |     425.524 | hard                 923.392 | iceptres       | adagrad |
-|  57 | iceptres_freeze_adagrad_172_11404 |             88.1085 |          80.8649 |      2.70067 |    104.936  |    -457.388 |     483.398 | easy         |         940.786 | iceptres       | adagrad |
-|  61 | iceptres_freeze_adagrad_194_9939  |             90.7585 |          64.1277 |    -18.1107  |     82.8528 |    -367.898 |     378.778 | hand_cleaned |         746.676 | iceptres       | adagrad |
-| 213 | incept_freeze_adagrad_241_11832   |             88.1029 |          81.6219 |     -4.04257 |    107.434  |    -456.223 |     427.787 | easy         |         884.01  | incept         | adagrad |
-| 218 | incept_freeze_adagrad_282_11528   |             88.1699 |          82.9041 |      5.5039  |    109.001  |    -477.048 |     437.77  | hard         |         914.818 | incept         | adagrad |
-| 220 | incept_freeze_adagrad_298_11182   |             91.2679 |          62.2784 |    -24.3674  |     79.689  |    -424.34  |     447.316 | hand_cleaned |         871.655 | incept         | adagrad |
-| 237 | res152_adagrad_18_13996           |             69.9538 |         179.394  |   -101.816   |    193.812  |    -425.658 |     598.849 | easy         |        1024.51  | res152         | adagrad |
-| 280 | res152_adagrad_45_10015           |             72.7807 |         188.802  |    -40.4565  |    225.333  |    -461.701 |     604.875 | hand_cleaned |        1066.58  | res152         | adagrad |
-| 239 | res152_adagrad_18_13996           |             75.6832 |         154.932  |    -76.6069  |    179.763  |    -430.867 |     580.997 | hard         |        1011.86  | res152         | adagrad |
-| 332 | vgg19_adagrad_221_12429           |             87.2185 |          91.1273 |      5.50042 |    117.399  |    -385.196 |     452.282 | hard         |         837.478 | vgg19          | adagrad |
-| 330 | vgg19_adagrad_221_12429           |             88.032  |          80.571  |     -5.46873 |    102.879  |    -312.338 |     436.529 | easy         |         748.867 | vgg19          | adagrad |
-| 331 | vgg19_adagrad_221_12429           |             89.076  |          80.0917 |     -9.75042 |    103.503  |    -393.223 |     439.389 | hand_cleaned |         832.612 | vgg19          | adagrad |
-| 593 | xcept_freeze_adagrad_209_10666    |             89.0772 |          76.9288 |     -0.30418 |    100.753  |    -443.945 |     463.716 | hard         |         907.661 | xcept          | adagrad |
-| 588 | xcept_freeze_adagrad_200_11047    |             89.1352 |          73.6268 |     -7.26301 |     94.8888 |    -365.463 |     483.342 | easy         |         848.805 | xcept          | adagrad |
-| 589 | xcept_freeze_adagrad_200_11047    |             90.5295 |          67.478  |    -17.045   |     86.4519 |    -393.883 |     411.196 | hand_cleaned |         805.079 | xcept          | adagrad |
+![img_9.png](img_9.png)
 
 ## Deploy
 The [streamlit](https://streamlit.io/) library was chosen for a deployment app due to the intuitive

@@ -11,6 +11,8 @@ Derek Syme
 import os
 import logging
 import subprocess
+import sys
+
 from IPython import get_ipython
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -36,7 +38,7 @@ LOGGER = logging.getLogger(__name__)
 SELECT_GPU = 0  # zero to use default
 HOST = '192.168.0.179 '
 PORT = 6005
-START_TENSORBOARD = True  # only compatible with windows os
+START_TENSORBOARD = False  # only compatible with windows os
 #################
 
 
@@ -242,8 +244,75 @@ def staged_freeze_training_model(model, model_name, train_data, val_data):
 
     return model
 
+def train_model(model, model_name, train_data, val_data):
 
-def main():
+    # Set up parameters
+    train_config = paths.config['training']
+    steps_per_epoch = train_config['steps_per_epoch']
+    opt_name = train_config['opt']
+    val_steps = train_config['val_steps']
+
+    if train_config['cos_anneal']:
+        # Use cosine decay optimizer
+        first_decay_steps = 10 * steps_per_epoch
+        t_mul = 2
+        lr_decayed_fn = tf.keras.optimizers.schedules.CosineDecayRestarts(0.001, first_decay_steps, t_mul=t_mul)
+    else:
+        lr_decayed_fn = 0.001
+
+    if opt_name == 'adagrad':
+        opt = tf.keras.optimizers.Adagrad(learning_rate=lr_decayed_fn)
+
+    elif opt_name == 'adam':
+        opt = tf.keras.optimizers.Adam(learning_rate=lr_decayed_fn)
+
+    else:
+        LOGGER.warning(f'Invalid or no optimizer option provided. Defaulting to Adam.')
+        opt = 'adam'
+
+    # Setup the saving checkpoints
+    save_name = '{}_{}_{}_{}'.format(model_name, opt_name, "{epoch}", "{val_loss}")
+
+    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=os.path.join(paths.TRAINED_MODELS, save_name),
+        save_weights_only=False,
+        monitor='val_loss',
+        mode='min',
+        save_best_only=True)
+
+    # Setup tensorboard
+    logs_base_dir = paths.TRAINING_LOGS
+    logdir = os.path.join(logs_base_dir, model.name + '_' + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(logdir, histogram_freq=1)
+
+    # freeze most of the model
+    model.trainable = True
+    freeze = train_config['fit1']['freeze_layers']
+    if freeze[1] > freeze[0]:
+        for layer in model.layers[freeze[0]: freeze[1]]:
+            layer.trainable = False
+
+    # Compile the model
+    model.compile(
+        loss="mean_squared_error",
+        optimizer=opt,
+        metrics=["mean_squared_error"])
+
+    # train to initialize the new weights
+    model.fit(
+        train_data,
+        steps_per_epoch=steps_per_epoch,
+        epochs=train_config['fit1']['to_epoch'],
+        initial_epoch=0,
+        validation_data=val_data,
+        validation_steps=val_steps,
+        callbacks=[tensorboard_callback, checkpoint_callback],
+        # verbose=0,
+    )
+    return model
+
+
+def main(argv):
     '''
     Trains all the models in the database on all the training data in the database.
     '''
@@ -275,19 +344,25 @@ def main():
             batch_size=paths.config['training']['batch_size']
         )
 
-        # Get model names
-        model_names = os.listdir(paths.MODEL_BUILDS)
+        if len(argv) < 1:
+            # Get model names
+            model_names = os.listdir(paths.MODEL_BUILDS)
+        else:
+            model_names = argv
 
         # TRAINING LOOP
         for model_name in model_names:
 
-            print(f'training with {model_name}')
+            LOGGER.info(f'Training {model_name}')
 
             # get model
             model = load_model(model_name)
 
             # Train the model
-            model = staged_freeze_training_model(model, model_name, train_generator, val_generator)
+            if paths.config['training']['staged_freeze']:
+                model = staged_freeze_training_model(model, model_name, train_generator, val_generator)
+            else:
+                model = train_model(model, model_name, train_generator, val_generator)
 
             # Save the model
             # This is unnecessary if using the save best callback
@@ -300,4 +375,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

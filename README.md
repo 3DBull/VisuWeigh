@@ -46,12 +46,12 @@ The main gap that seems to be holding the technology back is the lack of data. T
 The purpose of this project is to provide a reliable method of cattle weighing that reduces the stress on animals, 
 reduces the cost and time of weighing, and increases the frequency at which livestock can be weighed. The focus of this 
 project is on achieving results on real-world data. Weighing cows in a natural setting, walking, running or turning, from any
-angle, is what provides value to production oriented system. 
-This is accomplished by using ordinary 2D images of cattle to estimate weight accurately in a natural environment. 
-Deep learning models are employed for regression on image data. 
+angle, is what provides value to production oriented system.
 
 ### Methods
 The key to a good prediction CNN is good data. The focus of this project is to retrieve and clean large amounts of data in an automated fashon to train a CNN on predicting cattle weight.
+This is accomplished by using ordinary 2D images of cattle to estimate weight accurately in a natural environment. 
+Deep learning models are employed for regression on image data. 
 
 ### System Architecture
  The VisuWeigh project is designed to handle data, models, and evaluations automatically. For more information, read the [System Architecture documentation.](https://github.com/3DBull/VisuWeigh/blob/main/docs/system_architecture.md)
@@ -59,7 +59,7 @@ The key to a good prediction CNN is good data. The focus of this project is to r
 ### To Do:
 - [x] Create Raw Collection Pipline 
 - [x] Create Data Cleaning Pipline
-- [x] Train on CNN Model
+- [x] Train on CNN Models
 - [x] Compare Transformer and CNN Models
 - [x] Compare Single and Multi-Angle Prediction
 - [x] Scale up Data with Automated Collection

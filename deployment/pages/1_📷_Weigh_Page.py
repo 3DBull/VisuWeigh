@@ -47,8 +47,7 @@ def weigh(images):
     return results
 
 
-st.title('Hi There!')
-st.write("You've found it! This is the place to try out the revolutionary cattle weighing app!")
+st.title('VisuWeigh Cattle Weight Estimation')
 st.write("Just select an image to upload or take a picture with your camera, and we'll handle the rest of the heavy"
          " lifting! It's that Easy!")
 st.write('')
