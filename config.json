@@ -2,7 +2,7 @@
   "Name": "VisuWeigh",
   "Version": "0.1",
   "Database": {
-    "root": "\\\\192.168.0.179\\"
+    "root": "E:\\"
   },
   "Paths": {
     "SERV_MODEL": "",
@@ -14,14 +14,15 @@
   },
   "evaluation_sets":["easy", "hard"],
   "training": {
-    "batch_size": 6,
-    "steps_per_epoch": 12,
-    "val_steps": 5,
+    "batch_size": 5,
+    "steps_per_epoch": 250,
+    "val_steps": 12,
     "opt" : "adagrad",
     "cos_anneal" : 1,
+    "staged_freeze" : 0,
     "fit1": {
-     "to_epoch": 1,
-      "freeze_layers": [0, -3]
+     "to_epoch": 400,
+      "freeze_layers": [0, 0]
     },
     "fit2": {
       "to_epoch": 3,

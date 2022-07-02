@@ -18,54 +18,57 @@ robust system.
 The project is divided into five major modules. The development of these modules will be discussed in more detail in the 
 following sections. 
 
-1. [Collect](#1.collect) 
+1. [Collect](#collect) 
 2. [Clean](#clean)
-3. [Train](#3.train)
+3. [Train](#train)
 4. [Evaluate](#evaluate)
 5. [Deploy](#deploy)
 
-## 1.Collect
+## Collect
 After finding very limited data availability for this project, two methods were considered for data collection. 
 1. Collect data from a farm with a scale and camera apparatus
 2. Scrape relevant data from online auction sites  
 
-While the first approach offered the opportunity for higher quality data, it would be expensive and time consuming to 
-set up. In addition, many set ups would have to be put in place on many farms to get a variety of animal information. 
-The second option was chosen even though the data is lower quality due to the availability, variety, and quantity of data. 
+While the first approach offered the opportunity for higher quality data, it would be expensive and time-consuming to 
+set up. In addition, many set-ups would have to be put in place on many farms to get a variety of animal information. 
+The second option was chosen, even though the data is of lower quality due to the availability, variety, and quantity of data. 
 
 ### Implementation of Web Scraper
 Web scraping was started with “scrapy”, a python library that is common for scrawling websites and scraping data. 
 Although, promising at first, scrapy proved too limiting in capability for the complexity of the JavaScript auction sites. 
-I moved to a more powerful library called “selenium” which could handle the intricacies of digging into the site. 
+A more powerful library called “selenium” was used which could handle the intricacies of digging into the site. 
 This was effective in simulating human input to pass the verification as well as load and parse the JavaScript window.
 
-### Building the Pipline
+### Building the Pipeline
 Once the collection was started, there were many challenges that arose in getting accurate information. 
-The main challenge was from the timing of the information. ON the auction stream the cows are run through in batches, 
-as they are allowed to enter, the information is placed on the website by someone on site. This manual entry of information 
+The main challenge was caused by the timing of the information. During the auction, the cows are run through in batches. 
+As they are allowed to enter, the information is placed on the website by someone on site. This manual entry of information 
 means the data is often delayed with respect to the images. Sometimes the information would change several times before 
 the correct information would be displayed. Sometimes the information for a cow or group of cows would not be displayed 
-at all. A few strategies were attempted to avoid bad data from these inconsistencies. 
-The first method was to record information only after a switch in weight, then stop recording after a certain length of 
+at all.  
+
+A few strategies were attempted to avoid bad data from these inconsistencies. 
+The first method was to record information only after a switch in weight, and then stop recording after a certain length of 
 time. This worked with a measure of accuracy, but bad data was still being collected. 
-The second attempt included a cow detection for each collection point using the yolov3 neural network. Surprisingly, 
-this made the data only slightly cleaner. 
+The second attempt included a cow detection for each collection point using the YOLOv3 neural network. Surprisingly, 
+this made the data only slightly cleaner.
 On the third attempt, the cleaning of data was taken offline and correlated larger chunks of data at a time. 
 This allowed for all the raw data to be collected for future utilization. Processing the network on every datapoint was 
 extremely time-consuming. Some effort was extended to implementing multiprocessing for the offline job. The full
 prediction of any cow data was added to the dataset in this stage. This prevented the need to run the predictor
-on the dataset again at a later time. 
+on the dataset again at a later time.  
+
 Once the processing time was decreased with utilizing multiple cores, the prediction process was placed back online in 
 the collection script. Three workers were implemented for predicting and saving the data while the main script grabbed 
-the data every second and placed it in a queue for the workers. With this optimization, I was even able to run two 
-instances of the collection program at the same time pulling from two different auction locations simultaneously.  
+the data every second and placed it in a queue for the workers. With this optimization, two 
+instances of the collection program were able to run at the same time pulling from two different auction locations simultaneously.  
 Unfortunately, with no filtering on the data collection end, very high volumes of data must be collected and stored. 
-The first side effect of collected a large amount of data was file size. All my structured data was stored in one file, 
+The first side effect of collecting a large amount of data was file size. All the structured data was stored in one file, 
 which caused slower read/write access. The scraper program was then modified to create a new file for every unique day 
 and auction location. After this optimization, the bottleneck was the hard drive. Using an external HDD for data storage 
 created a read/write bottleneck especially when collecting from two auctions simultaneously. The queues would back up 
-with data to be written. This is ok as long as the memory/paging file is a sufficient size, but not acceptable as the 
-project scales. A hardware change to M.2 SSD to support the data volume needs.  
+with data to be written. This was ok as long as the memory/paging file was a sufficient size, but not acceptable as the 
+project scaled. A hardware change to M.2 SSD to support the data volume needs.  
 
 The auctions run in different locations on different days of the week. I was able to automate the process of collecting 
 from these different locations at different times using the Windows Task Scheduler. After performing the multiprocessing 
@@ -88,12 +91,12 @@ Numerical data included commas in the thousands place, units that had to be remo
 had to be discarded. 
 
 ### Correcting the Data Timing
-Much of the data comes from live data in which there is a severe lack of quality. 
-One of the biggest challenges in cleaning this data is the timing of information. When the auction is live, each lot has
-information that is taken from a queue and placed in the viewing screen manually by a human that is present when the cattle
-are in view of the camera. Often times the cows are allowed into view before the data is switched. 
-Sometimes the cows are let in after the data is switched. Occasionally, a lot's information did not get put in the 
-queue and thus stays incorrect for the duration of the viewing for the cattle lot. Sometimes these lots will have the
+Much of the data comes from live data in which there is a severe lack of quality. As explained in the [Collect](#collect) section
+one of the biggest challenges in cleaning this data was the timing of information. When the auction was live, each lot had
+information that was taken from a queue and placed in the viewing screen manually by a human that was present when the cattle
+were in view of the camera. Often times the cows were allowed into view before the data was switched. 
+Sometimes the cows were let in after the data was switched. Occasionally, a lot's information did not get put in the 
+queue and thus remained incorrect for the duration of the viewing for the cattle lot. Sometimes these lots will have the
 information entered manually during the viewing. This means the information is significantly delayed compared to the 
 image view.
 
@@ -105,8 +108,8 @@ The following criteria is used to define the most accurate information for a gro
  3.	If the valid lot has no weight change for the duration of cows present in the image, and there is a weight change present before the valid lot (while there are no detected cows in image), then valid weight will be the weight at the start of the valid lot.
  4.	If there are multiple valid lots separated by only one image with no cows detected, combine the valid lots.
 
-Based on the criteria, I was able to make an algorithm that adjusted the timing of the data to match the timing of the 
-images. The following diagram shows the updated weight information (in red) In correct timing with the number of cows 
+Based on the criteria, an algorithm was made that adjusted the timing of the data to match the timing of the 
+images. The following diagram shows the updated weight information (in red), with correct timing of the number of cows 
 predicted in the image (yellow). This can be compared with the raw weight information (purple).
 
 ![img_6.png](img_6.png)
@@ -114,12 +117,12 @@ predicted in the image (yellow). This can be compared with the raw weight inform
 ### Extracting Useful Data
 It is difficult to obtain a weight estimate with multiple cows in an image. Also, to use single cows cropped out of a 
 multi-cow image would only add variance to the data since the average weight of the group would be applied to the 
-selected cow. To simplify the task, only the single cows lots were chosen for training on. This reduced the volume of 
+selected cow. To simplify the task, only the single cow lots were chosen for training. This reduced the volume of 
 usable data significantly, but it was a necessary cost for data quality. 
 
 ### Distribution of Validated Data
-After getting a valid set of data, we need to look at the distribution to see where our data and therefore 
-our model will be biased. The following shows a histogram of weight bins indicating the distribution across the 
+After getting a valid set of data, it's necessary to look at the distribution to see where our data, and therefore 
+our model, will be biased. The following shows a histogram of weight bins indicating the distribution across the 
 validated data. 
 
 ![img_7.png](img_7.png)
@@ -137,10 +140,10 @@ Parameters for training are set in a .json configuration file. This allows for t
 Regression is performed on the models with a single weight value in pounds as the output. The pound is used since this is the 
 commonly used unit in the cattle industry.
 
-For the loss function a commonly used mean squared error is used: $$ MSE = \frac {\sum \limits _{i=0} ^{N}  (y - \hat{y})^2} {N} $$ 
+For the loss function, the commonly used mean squared error equation is used: $$ MSE = \frac {\sum \limits _{i=0} ^{N}  (y - \hat{y})^2} {N} $$ 
 
 During training, the model parameters are embedded into  the name of the model. With this method, each version of the
-model can easily be identified in tensorboard. 
+model can easily be identified in TensorBoard. 
 For the evaluation process, these embeddings can be decoded and compared. 
 
 
@@ -163,7 +166,7 @@ to the dataset. This way the entire evaluation set will be new cows.
 The training process was developed as more images were being collected. As more data was collected, the process is repeated 
 with the new data. An experiment was performed to view the trend in increased performance versus the amount of data collected.
 The details and results of that experiment can be found in the [scaling notebook.](../notebooks/4_scaling.ipynb)
-The scaling process was performed on the Xception network. Subsequent iterations of this experiment should be performed 
+The scaling process was performed on the Xception model. Subsequent iterations of this experiment should be performed 
 to compare the effects of data amount on a CNN versus a Transformer. 
 
 ### Models
@@ -194,8 +197,8 @@ library was used to look at the activations of the layers. Below are some exampl
 It is not easy to derive meaning or effectiveness from these activations. Some research [[3]](../README.md#references-and-related-works) 
 has shown the chest width measurement to be the trait most related to the body weight. With "correct" training of the model, 
 it would be expected that there would be more activation in the layers around the chest area. While this expectation is occasionally met, 
-the more commonly observed trend is segmentation of the animal in early activation layers with a focus on the back in the
-later layers. 
+the more commonly observed trend is segmentation of the animal in early activation layers. A focus on the back of the animal 
+is present in the later layers of the models. 
 
 ![img_1.png](img_1.png)
 ![img_3.png](img_3.png)
@@ -207,6 +210,15 @@ It seems like it might be using the shadow of the cow for added perspective on t
 
 
 ## Evaluate
+
+### Data 
+
+Three datasets were used for evaluation. All three datasets were taken from data that was separated out from the training
+data by the day it was collected. This ensured that the data was not seen by the models during training. The evaluation
+data was also manually observed to ensure quality data gave an accurate representation of the models' performance. 
+
+1. Easy  
+   A set of data cleaned to ensure do 
 
 ### Metrics
 The two main evaluation components that are evaluated are:
@@ -221,7 +233,7 @@ The two main evaluation components that are evaluated are:
 
 MAE was chosen to give a fair representation by how many pounds the model misrepresented the image. This metric is often
 used in machine learning and also has meaningful information for someone in the cattle industry.  
-The accuracy metric gives a comparative value for anyone in any domain to easily recognize. The normalization in the
+The accuracy metric gives a comparative value for people in any domain to easily recognize. The normalization in the
 accuracy metric also provides us with an understanding of the relativity with which a model predicts. In essence, it is 
 more sensitive toward lighter animals of which the accuracy is of greater importance. This is especially true as it relates 
 to the health of the animal. 
@@ -232,20 +244,29 @@ Other metrics were added for extra insights:
 range. If a model is trained poorly, it could be "guessing" low on higher weight cows. This metric will catch that bias.  
 
 
-2. Error STD
+2. Error STD  
+   Helps us understand the distribution of the error.
+  
 
-Helps us understand the distribution of the error. 
-    
 3. Minimum Error
 4. Maximum Error
-5. Maximum Absolute Error
-
-These last three metrics are included to show us the extremes of the error for reliability purposes. 
+5. Maximum Absolute Error  
+   These last three metrics are included to show us the extremes of the error for reliability purposes. 
 
 ### Results
 The following table shows the evaluation results of models trained on 65,000 images.  
 
 ![img_9.png](img_9.png)
+
+The There are some interesting results here. You will notice, most of the models perform better on the hard dataset than 
+the easy one. This is because more of the training data is similar to the hard dataset than the easy dataset. That means 
+these models are going to do a better job of weighing a running cow that a cow that is standing still. 
+
+We can compare our best model to the [best previous model by Mikel Gjergji [1]](../README.md#references-and-related-works).
+
+Our model achieved a MAE of 73.6 lb which is 33.40kg. Gjergji's model achieved an MAE of 23.19kg.  
+So it is lagging behind in performance, but it is also using much harder data to achieve this result. Gjergji's training data came from a well constrained environment where the animal pose was always similar with identical surroundings.
+Considering that there is no restriction to the angle or movement of the animal for the VisuWeigh models, their performance is competitive with other research. 
 
 ## Deploy
 The [streamlit](https://streamlit.io/) library was chosen for a deployment app due to the intuitive
@@ -253,7 +274,7 @@ nature of the interface and compatibility with machine learning/data visualizati
 Not only is the interface convenient for showcasing the project, but it's also useful for 
 testing models and visualising data locally for iterative development. 
 
-The web app was built in two with the following two main components: 
+The web app was built in two phases with the following two main components: 
 
 1. The Prediction Page was built to showcase the model and to retrieve extra data from users.
 2. The Data Page was built to allow users to interact with the models and data.
