@@ -172,8 +172,8 @@ to compare the effects of data amount on a CNN versus a Transformer.
 ### Models
 Most of the models used are common models initialized with pre-trained weights. The transfer learning approach is used to 
 adapt these pre-trained models to the cattle weight dataset. The idea is that some knowledge obtained by those models 
-in other domains can be utilized in this domain.
-Multiple iterations of the training process were performed for the following models:
+in other domains can be utilized in this domain. 
+The following models were chosen to train on since they have been proven to perform well in other vision problems:
 1. Xception 
 2. Inception
 3. InceptionRes
