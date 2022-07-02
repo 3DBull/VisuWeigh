@@ -172,13 +172,12 @@ to compare the effects of data amount on a CNN versus a Transformer.
 ### Models
 Most of the models used are common models initialized with pre-trained weights. The transfer learning approach is used to 
 adapt these pre-trained models to the cattle weight dataset. The idea is that some knowledge obtained by those models 
-in other domains can be utilized in this domain.
-Multiple iterations of the training process were performed for the following models:
+in other domains can be utilized in this domain. 
+The following models were chosen to train on since they have been proven to perform well in other vision problems:
 1. Xception 
 2. Inception
 3. InceptionRes
 4. Resnet152
-5. A custom CNN
 6. Vgg19
 
 Other models attempted in earlier iterations but did not have promising results:
@@ -213,12 +212,17 @@ It seems like it might be using the shadow of the cow for added perspective on t
 
 ### Data 
 
-Three datasets were used for evaluation. All three datasets were taken from data that was separated out from the training
-data by the day it was collected. This ensured that the data was not seen by the models during training. The evaluation
-data was also manually observed to ensure quality data gave an accurate representation of the models' performance. 
+Two datasets were used for evaluation. Both datasets were taken from data that was separated out from the training
+data by the day it was collected. This ensured that any animals in the evaluation data had not been seen by the models 
+during training. The evaluation data was also manually observed to ensure quality data gave an accurate representation 
+of the models' performance. 
 
 1. Easy  
-   A set of data cleaned to ensure do 
+   A set of data cleaned to ensure a clear image with a good standing pose of the animal that a human would find easier to asses.
+2. Hard  
+   A set of data cleaned to ensure a single whole cow is in the image.
+
+The two sets were made mutually exclusive, therefore any data included in the easy set would not be found in the hard set.
 
 ### Metrics
 The two main evaluation components that are evaluated are:
